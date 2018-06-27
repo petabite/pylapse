@@ -6,38 +6,53 @@ import threading
 import time
 import datetime
 
-
 pylapse_font = ('Trebuchet', 14)
 
 class CustomLabel(tk.Label):
+    """
+    defines a custom label used throughout pylapse
+    """
     def __init__(self, parent, **kwargs):
         tk.Label.__init__(self, parent, **kwargs)
         self.config(font = pylapse_font)
         self.pack()
+
 class PyLapse(tk.Tk):
+    """
+    root window of pylapse, MainScreen is placed in this window
+    """
     def __init__(self):
         super(PyLapse, self).__init__()
         self.title('PyLapse')
 
 class MainScreen(tk.Frame):
+    """
+    MainScreen frame of pylapse, is placed in pylapse root window
+    """
     def __init__(self, parent):
+        """
+        places the live view and timelapse frames
+        """
         tk.Frame.__init__(self,parent)
         tk.Label(self, text='PyLapse', font = ('Trebuchet', 20)).grid(row=1)
         self.set_live_view()
         self.set_timelapse_frame()
 
     def set_live_view(self):
-        # TODO: implement live view, scrap controls
+        """
+        contains widgets in live view section of MainScreen
+        """
+        # TODO: implement live view, scrap controls,
         live_view_frame = tk.Frame(self)
         live_view_frame.grid(row=2)
 
         live_view = tk.Frame(live_view_frame)
         live_view.grid(row=1, column=1)
-        CustomLabel(live_view, text = 'live view')
+        # CustomLabel(live_view, text = 'live view')
 
         live_view_controls_frame = tk.Frame(live_view_frame)
         live_view_controls_frame.grid(row=1, column=2)
-        CustomLabel(live_view_controls_frame, text = 'controls')
+        # CustomLabel(live_view_controls_frame, text = 'controls')
 
         self.camera_connect_button = tk.Button(live_view_frame, text='Connect to camera', font=pylapse_font,command = self.connect_to_camera)
         self.camera_connect_button.grid(row=2, column=1,columnspan=2)
@@ -45,6 +60,9 @@ class MainScreen(tk.Frame):
         self.camera_connection_status.grid(row=3, column=1,columnspan=2)
 
     def set_timelapse_frame(self):
+        """
+        contains widgets in the timelapse section of MainScreen
+        """
         timelapse_frame = tk.Frame(self)
         timelapse_frame.grid(row=3)
 
@@ -87,7 +105,6 @@ class MainScreen(tk.Frame):
         CustomLabel(timelapse_info_frame, text = 'TIMELAPSE INFO')
         self.total_shots = CustomLabel(timelapse_info_frame, text = 'Total Amount of Shots: ', pady = 35)
         self.shoot_duration = CustomLabel(timelapse_info_frame, text = 'Total Shooting Time: ', pady = 35)
-        # self.duration = CustomLabel(timelapse_info_frame, text = 'Timelapse Duration: ', pady = 6)
 
         self.update_timelapse_info()
 
@@ -95,6 +112,9 @@ class MainScreen(tk.Frame):
         start_button.grid(row=4)
 
     def connect_to_camera(self):
+        """
+        attempts connection to sony camera
+        """
         try:
             self.camera_connection_status.config(text='Connecting to camera...')
             self.camera = libsonyapi.Camera()
@@ -105,6 +125,10 @@ class MainScreen(tk.Frame):
             self.camera_connection_status.config(text='Connection to camera failed')
 
     def get_params(self):
+        """
+        returns: fps, min, sec, timelapse_duration, total_interval_in_sec, total_shots, shoot_duration
+        gets params from user input of MainScreen
+        """
         fps = int(self.fps_scale.get())
         min = int(self.min_between_shots.get())
         sec = int(self.sec_between_shot.get())
@@ -116,15 +140,19 @@ class MainScreen(tk.Frame):
         return fps, min, sec, timelapse_duration, total_interval_in_sec, total_shots, shoot_duration
 
     def update_timelapse_info(self, event = None):
+        """
+        this is called whenever user changes fps, duration, interval value in MainScreen
+        calculates and updates the respective labels
+        """
         fps, min, sec, timelapse_duration, total_interval_in_sec, total_shots, shoot_duration = self.get_params()
 
-        # BUG: division by zero need to handle
         self.total_shots.config(text= 'Total Amount of Shots:\n' + str(total_shots) + ' shots')
         self.shoot_duration.config(text = 'Total Shooting Time:\n' + str(int(shoot_duration/60)) + ' min ' + str(shoot_duration%60) + ' sec')
-        # self.duration.config(text= 'Timelapse Duration:\n' + str(total_shots / fps) + ' sec')
-        # print(fps,min,sec)
 
     def confirm(self):
+        """
+        displays confirmation box, if yes: start timelapse, if no: nothing happens
+        """
         fps, min, sec, timelapse_duration, total_interval_in_sec, total_shots, shoot_duration = self.get_params()
         confirm_box = messagebox.askyesno('Start timelapse??',
                 'Do you want to start a timelapse with the following settings:\n\n' +
@@ -141,60 +169,57 @@ class MainScreen(tk.Frame):
             timelapse.daemon = True
             timelapse.start()
 
-            self.top = tk.Toplevel(width=1000)
-            self.top.title('Timelape in progress...')
+            #init timelapse progress checker
+            top = tk.Toplevel(width=1000)
+            top.title('Timelape in progress...')
 
             self.start_time = datetime.datetime.now()
             self.end_time = self.start_time + datetime.timedelta(seconds=shoot_duration)
-            CustomLabel(self.top, text='Timelape in progress...')
-            self.shot_count = CustomLabel(self.top)
-            self.percent_done = CustomLabel(self.top)
-            CustomLabel(self.top, text='-'*10)
-            self.time_elapsed = CustomLabel(self.top)
-            self.time_left = CustomLabel(self.top)
-            time_started = CustomLabel(self.top, text='Time Started: ' + self.start_time.strftime('%I:%M'))
-            estimate_complete = CustomLabel(self.top, text='Estimated Time Completion: ' + self.end_time.strftime('%I:%M'))
+            self.progress_label = CustomLabel(top, text='Timelape in progress...')
+            self.shot_count = CustomLabel(top)
+            self.percent_done = CustomLabel(top)
+            CustomLabel(top, text='-'*10)
+            self.time_elapsed = CustomLabel(top)
+            time_started = CustomLabel(top, text='Time Started: ' + self.start_time.strftime('%I:%M'))
+            estimate_complete = CustomLabel(top, text='Estimated Time Completion: ' + self.end_time.strftime('%I:%M'))
+
+            def stop_timelapse():
+                self.isrunning = False
+                top.destroy()
+            self.cancel_button = tk.Button(top, text='Cancel Timelapse', font=pylapse_font, command=stop_timelapse)
+            self.cancel_button.pack()
 
             self.refresh_info_toplevel(total_interval_in_sec, total_shots, shoot_duration)
-            self.top.mainloop()
-            # info_window = threading.Thread(target=self.info_toplevel, args=(total_interval_in_sec, total_shots, shoot_duration))
-            # info_window.daemon = True
-            # self.shots_taken = 0
-            # while self.shots_taken != total_shots:
-            #     self.after(1000, func=info_window.start)
+            top.mainloop()
 
     def start_timelapse(self, interval_in_sec, total_shots):
         """
         starts timelapse with params: interval and total shots
         """
-        print('starting timelapse', interval_in_sec, total_shots)
         self.shots_taken = 0
-        while self.shots_taken != total_shots:
-            print(self.camera.do(Actions.actTakePicture))
+        self.isrunning = True
+        while self.shots_taken != total_shots and self.isrunning:
+            self.camera.do(Actions.actTakePicture)
             time.sleep(interval_in_sec)
-            # self.after(interval_in_sec*1000, func=self.camera.do(Actions.actTakePicture))
             self.shots_taken += 1
+        self.isrunning = False
 
     def refresh_info_toplevel(self, interval_in_sec, total_shots, shoot_duration):
         """
-        displays info about timelapse
+        refresh timelapse info window until timelapse is completed
         """
-        #time elapsed, estimated time completion, time left, shots count, percent done
-        # FIXME: bug with top level
-        # while self.shots_taken != total_shots:
-        if self.shots_taken < total_shots:
+        if self.shots_taken < total_shots and self.isrunning:
             fps, min, sec, timelapse_duration, total_interval_in_sec, total_shots, shoot_duration = self.get_params()
-            print('ran info toplevel')
-            self.shot_count.config(text='Shots: ' + str(self.shots_taken) + '/' + str(total_shots))
-            self.percent_done.config(text='Percent Completed: '+ (str((self.shots_taken/total_shots)*100) + '%'))
+            self.shot_count.config(text='Shots: ' + str(self.shots_taken+1) + '/' + str(total_shots))
+            self.percent_done.config(text='Percent Completed: '+ (str(int(((self.shots_taken+1)/total_shots)*100)) + '%'))
             self.time_elapsed.config(text='Time Elapsed: ' + str(datetime.datetime.now() - self.start_time).split('.')[0])
-            self.time_left.config(text='Time Left: ' + str(self.end_time - datetime.datetime.now()).split('.')[0])
             self.after(1000, self.refresh_info_toplevel, total_interval_in_sec, total_shots, shoot_duration)
-            # time.sleep(1)
-
-
+        elif self.shots_taken == total_shots and not self.isrunning:
+            self.progress_label.config(text='TIMELAPSE COMPLETED!!')
+            self.cancel_button.pack_forget()
 
 if __name__ == '__main__':
+    #place MainScreen in pylapse root window and start mainloop
     root = PyLapse()
     MainScreen(root).pack()
     root.mainloop()
