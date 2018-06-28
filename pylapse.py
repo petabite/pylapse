@@ -221,5 +221,6 @@ class MainScreen(tk.Frame):
 if __name__ == '__main__':
     #place MainScreen in pylapse root window and start mainloop
     root = PyLapse()
+    root.iconbitmap('C:/Users/Philip/Desktop/code/pylapse/releases/pylapse.ico')
     MainScreen(root).pack()
     root.mainloop()
