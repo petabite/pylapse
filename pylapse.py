@@ -5,6 +5,7 @@ from tkinter import messagebox
 import threading
 import time
 import datetime
+import os
 
 pylapse_font = ('Trebuchet', 14)
 
@@ -219,8 +220,18 @@ class MainScreen(tk.Frame):
             self.cancel_button.pack_forget()
 
 if __name__ == '__main__':
+    def resource_path(relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, relative_path)
+
     #place MainScreen in pylapse root window and start mainloop
     root = PyLapse()
-    root.iconbitmap('C:/Users/Philip/Desktop/code/pylapse/releases/pylapse.ico')
+    root.iconbitmap(resource_path('releases\pylapse.ico'))
     MainScreen(root).pack()
     root.mainloop()
